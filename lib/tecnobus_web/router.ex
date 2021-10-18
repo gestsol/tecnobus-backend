@@ -7,6 +7,9 @@ defmodule TecnobusWeb.Router do
 
   scope "/api", TecnobusWeb do
     pipe_through :api
+
+    resources "/alert_types", AlertTypeController, except: [:new, :edit]
+    resources "/alerts", AlertController, except: [:new, :edit]
   end
 
   # Enables LiveDashboard only for development
