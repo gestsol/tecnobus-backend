@@ -8,7 +8,7 @@ defmodule Tecnobus.Application do
   def start(_type, _args) do
     children = [
       # Start the Ecto repository
-      # Tecnobus.Repo,
+      Tecnobus.Repo,
       # Start the Telemetry supervisor
       TecnobusWeb.Telemetry,
       # Start the PubSub system
