@@ -14,7 +14,8 @@ defmodule Tecnobus.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Tecnobus.PubSub},
       # Start the Endpoint (http/https)
-      TecnobusWeb.Endpoint
+      TecnobusWeb.Endpoint,
+      Tecnobus.Scheduler
       # Start a worker by calling: Tecnobus.Worker.start_link(arg)
       # {Tecnobus.Worker, arg}
     ]
