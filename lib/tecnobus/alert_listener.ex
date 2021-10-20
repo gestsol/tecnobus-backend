@@ -9,7 +9,7 @@ defmodule Tecnobus.AlertListener do
 
     if length(alerts) > 0 do
       Task.async(fn ->
-        send_whatsapp(alerts, "+58", "04121153914")
+        send_whatsapp(alerts, "+56", "950906625")
       end)
 
       alerts = Enum.map(alerts, &format_alert/1)
