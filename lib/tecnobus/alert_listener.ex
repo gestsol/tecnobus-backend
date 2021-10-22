@@ -4,12 +4,18 @@ defmodule Tecnobus.AlertListener do
   alias Tecnobus.API.BodyHelper.AlertRequest
   alias Tecnobus.Events
 
+  # Telefonos a los que se enviaran las alertas por whatsapp
+  @phones ["+56950906625"]
+
+  # Funcion para ser ejecutada en un job. Cada ciertos minutos
+  # se obtienen las alertas de la api externa, se envian por whatsapp
+  # y se guardan en nuestra base de datos.
   def process_centinela_alerts(minutes) do
     alerts = get_centinela_alerts(minutes)
 
     if length(alerts) > 0 do
       Task.async(fn ->
-        send_whatsapp(alerts, "+56", "950906625")
+        send_whatsapp(alerts, @phones)
       end)
 
       alerts = Enum.map(alerts, &format_alert/1)
@@ -21,6 +27,8 @@ defmodule Tecnobus.AlertListener do
   end
 
   def get_centinela_alerts(minutes) do
+    # Las alertas se solicitan especificando los terid's de los dispositivos
+    # Nota: terid es un campo de la API de las alarmas que sirve como identificador de cada device.
     terid = Alerts.get_devices_by_group(36) |> Enum.map(fn d -> d["terid"] end)
 
     {starttime, endtime} = get_start_end_dates(minutes)
@@ -34,9 +42,11 @@ defmodule Tecnobus.AlertListener do
     }
 
     Alerts.get_alerts(body)
-    |> append_alert_name()
+    |> append_alert_name_and_device_id()
   end
 
+  # El parametro de offset es la diferencia en minutos que queremos que exista
+  # entre starttime y endtime. endtime siempre sera la hora actual.
   def get_start_end_dates(offset) when is_integer(offset) do
     now = Timex.now("America/Santiago")
 
@@ -58,29 +68,43 @@ defmodule Tecnobus.AlertListener do
     Regex.replace(~r/\.[^.]*$/, str, "")
   end
 
-  def append_alert_name([]) do
+  def append_alert_name_and_device_id([]) do
     []
   end
 
-  def append_alert_name(alerts) do
+  # Agrega a las alertas el nombre de la alerta y el device_id,
+  # en este caso el campo device_id se refiere al campo carlicence de la API externa.
+  # Este campo es el que se guardara en nuestra base de datos en la tabla "Alerts"
+  # en el campo "device"
+  def append_alert_name_and_device_id(alerts) do
     types = Events.list_alert_types()
 
     Enum.map(alerts, fn a ->
       type = Integer.to_string(a["type"], 10)
       alert_DB = Enum.find(types, &(&1.code === type))
       alert_name = alert_DB |> Map.get(:name)
+      # device_id sera el campo "carlicence" de los devices obtenido de la API de alarmas.
+      device_id = Alerts.get_device_by_terid(a["terid"]) |> Map.get("carlicence")
 
-      Map.merge(a, %{"alert_name" => alert_name, "alert_type_id" => alert_DB.id})
+      Map.merge(a, %{"alert_name" => alert_name, "alert_type_id" => alert_DB.id, "device_id" => device_id})
     end)
   end
 
-  def send_whatsapp(alerts, code, phone) do
+  def send_whatsapp(alerts, phone) when is_bitstring(phone) do
     message = assemble_multiple_messages(alerts)
-    Whatsapp.send(code, phone, message)
+    Whatsapp.send(phone, message)
+  end
+
+  def send_whatsapp(alerts, phone) when is_list(phone) do
+    message = assemble_multiple_messages(alerts)
+
+    Enum.each(phone, fn p ->
+      Whatsapp.send(p, message)
+    end)
   end
 
   def assemble_message(alert) do
-    "*#{alert["alert_name"]}*. Vehículo: #{alert["terid"]}. Velocidad: #{alert["speed"]}Km/h. hora: #{alert["time"]}"
+    "*#{alert["alert_name"]}*. Vehículo: #{alert["terid"]}. Velocidad: #{alert["speed"]}Km/h. hora: #{alert["time"]}. Coordenadas: #{alert["gpslat"]},#{alert["gpslng"]}"
   end
 
   def assemble_multiple_messages(alerts) do
@@ -90,10 +114,11 @@ defmodule Tecnobus.AlertListener do
     end)
   end
 
+  # Crea el formato requerido de alerta para guardar en nuestra DB.
   def format_alert(alert) do
     %{
       "datetime" => alert["time"],
-      "device" => alert["terid"],
+      "device" => alert["device_id"],
       "group" => "Centinela",
       "lat" => alert["gpslat"],
       "lng" => alert["gpslng"],
