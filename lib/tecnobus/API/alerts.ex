@@ -28,6 +28,11 @@ defmodule Tecnobus.API.Alerts do
     |> Enum.filter(fn d -> d["groupid"] === group_id end)
   end
 
+  def get_device_by_terid(terid) do
+    get_devices()
+    |> Enum.find(fn d -> d["terid"] === terid end)
+  end
+
   def get_alerts(body = %AlertRequest{}) do
     do_request("post", "/alarm/detail", Map.from_struct(body))
   end
