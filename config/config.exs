@@ -33,8 +33,8 @@ config :tesla, adapter: Tesla.Adapter.Hackney, recv_timeout: 120_000
 config :tecnobus, Tecnobus.Scheduler,
   jobs: [
     process_alerts: [
-      schedule: "/10 * * * *",
-      task: {Tecnobus.AlertListener, :process_centinela_alerts, [10]}
+      schedule: "*/3 * * * *",
+      task: {Tecnobus.AlertListener, :process_centinela_alerts, [3]}
     ]
   ]
 

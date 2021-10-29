@@ -5,7 +5,11 @@ defmodule Tecnobus.AlertListener do
   alias Tecnobus.Events
 
   # Telefonos a los que se enviaran las alertas por whatsapp
-  @phones ["+56950906625"]
+  @phones [
+    "+56950906625",
+    "+56947518114",
+    "+584121153914"
+  ]
 
   # Funcion para ser ejecutada en un job. Cada ciertos minutos
   # se obtienen las alertas de la api externa, se envian por whatsapp
@@ -14,15 +18,11 @@ defmodule Tecnobus.AlertListener do
     alerts = get_centinela_alerts(minutes)
 
     if length(alerts) > 0 do
-      Task.async(fn ->
-        send_whatsapp(alerts, @phones)
-      end)
-
       alerts = Enum.map(alerts, &format_alert/1)
 
-      Task.async(fn ->
-        Enum.each(alerts, &Events.create_alert/1)
-      end)
+      send_whatsapp(alerts, @phones)
+
+      Enum.each(alerts, &Events.create_alert/1)
     end
   end
 
@@ -86,7 +86,11 @@ defmodule Tecnobus.AlertListener do
       # device_id sera el campo "carlicence" de los devices obtenido de la API de alarmas.
       device_id = Alerts.get_device_by_terid(a["terid"]) |> Map.get("carlicence")
 
-      Map.merge(a, %{"alert_name" => alert_name, "alert_type_id" => alert_DB.id, "device_id" => device_id})
+      Map.merge(a, %{
+        "alert_name" => alert_name,
+        "alert_type_id" => alert_DB.id,
+        "device_id" => device_id
+      })
     end)
   end
 
@@ -104,13 +108,13 @@ defmodule Tecnobus.AlertListener do
   end
 
   def assemble_message(alert) do
-    "*#{alert["alert_name"]}*. Vehículo: #{alert["terid"]}. Velocidad: #{alert["speed"]}Km/h. hora: #{alert["time"]}. Coordenadas: #{alert["gpslat"]},#{alert["gpslng"]}"
+    "*#{alert["alert_name"]}*. Vehículo: #{alert["device"]}. Velocidad: #{alert["speed"]}Km/h. hora: #{alert["datetime"]}. Coordenadas: #{alert["lat"]},#{alert["lng"]}"
   end
 
   def assemble_multiple_messages(alerts) do
     Enum.reduce(alerts, "", fn alert, acc ->
       msg = assemble_message(alert)
-      acc <> "                                                            " <> msg
+      acc <> msg <> "                                                            "
     end)
   end
 
@@ -122,7 +126,9 @@ defmodule Tecnobus.AlertListener do
       "group" => "Centinela",
       "lat" => alert["gpslat"],
       "lng" => alert["gpslng"],
-      "alert_type_id" => alert["alert_type_id"]
+      "alert_type_id" => alert["alert_type_id"],
+      "alert_name" => alert["alert_name"],
+      "speed" => alert["speed"]
     }
   end
 end
