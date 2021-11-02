@@ -123,7 +123,7 @@ defmodule Tecnobus.AlertListener do
   end
 
   def assemble_message(alert) do
-    "*#{alert["alert_name"]}*. Vehículo: #{alert["device"]}. Velocidad: #{alert["speed"]}Km/h. hora: #{alert["datetime"]}. Coordenadas: #{alert["lat"]},#{alert["lng"]}"
+    "*#{alert.alert_name}*. Vehículo: #{alert.device}. Velocidad: #{alert.speed}Km/h. hora: #{alert.datetime}. Coordenadas: #{alert.lat},#{alert.lng}"
   end
 
   def assemble_multiple_messages(alerts) do
