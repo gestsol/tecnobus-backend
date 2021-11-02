@@ -17,12 +17,26 @@ defmodule Tecnobus.AlertListener do
   def process_centinela_alerts(minutes) do
     alerts = get_centinela_alerts(minutes)
 
+    IO.puts("++++++++++++++++ ALERTAS +++++++++++++++++++")
+    IO.inspect(alerts)
+
     if length(alerts) > 0 do
       alerts = Enum.map(alerts, &format_alert/1)
 
-      send_whatsapp(alerts, @phones)
+      created_alerts =
+        Task.async_stream(alerts, &Events.create_alert/1)
+        |> Enum.filter(fn {:ok, result} ->
+          case result do
+            {:error, error} ->
+              IO.warn("ERROR AL INSERTAR ALERTA EN BASE DE DATOS. VER EL OUTPUT ABAJO:")
+              IO.inspect(%{"error" => error})
+              false
+            {:ok, _created_alert} ->
+              true
+          end
+        end)
 
-      Enum.each(alerts, &Events.create_alert/1)
+      send_whatsapp(created_alerts, @phones)
     end
   end
 
