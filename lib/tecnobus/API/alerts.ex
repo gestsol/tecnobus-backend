@@ -8,11 +8,19 @@ defmodule Tecnobus.API.Alerts do
   plug Tesla.Middleware.JSON
 
   def get_auth_key() do
-    {:ok, response} = get("/key?username=wit&password=wit3004..")
+    try do
+      {:ok, response} = get("/key?username=wit&password=wit3004..")
 
-    Map.get(response, :body)
-    |> Map.get("data")
-    |> Map.get("key")
+      Map.get(response, :body)
+      |> Map.get("data")
+      |> Map.get("key")
+
+    rescue
+      e in MatchError ->
+        {:error, reason} = Map.get(e, :term)
+        raise("ERROR AL HACER SOLICITUD A LA API DE ALARMAS. RAZÓN: #{reason}")
+    end
+
   end
 
   def get_groups do
