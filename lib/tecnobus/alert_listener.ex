@@ -14,8 +14,8 @@ defmodule Tecnobus.AlertListener do
   # Funcion para ser ejecutada en un job. Cada ciertos minutos
   # se obtienen las alertas de la api externa, se envian por whatsapp
   # y se guardan en nuestra base de datos.
-  def process_centinela_alerts(minutes) do
-    alerts = get_centinela_alerts(minutes)
+  def process_centinela_alerts(alerts) do
+    # alerts = get_centinela_alerts(minutes)
 
     IO.puts("++++++++++++++++ ALERTAS +++++++++++++++++++")
     IO.inspect(alerts)
@@ -24,15 +24,13 @@ defmodule Tecnobus.AlertListener do
       alerts = Enum.map(alerts, &format_alert/1)
 
       created_alerts =
-        Task.async_stream(alerts, &Events.create_alert/1)
-        |> Enum.map(fn {:ok, result} ->
-          case result do
+        Enum.map(alerts, fn alert ->
+          case Events.create_alert(alert) do
+            {:ok, _created_alert} -> alert
             {:error, error} ->
               IO.warn("ERROR AL INSERTAR ALERTA EN BASE DE DATOS. VER EL OUTPUT ABAJO:")
               IO.inspect(%{"error" => error})
               nil
-            {:ok, created_alert} ->
-              created_alert
           end
         end)
         |> Enum.reject(fn a -> is_nil(a) end)
@@ -123,7 +121,7 @@ defmodule Tecnobus.AlertListener do
   end
 
   def assemble_message(alert) do
-    "*#{alert.alert_name}*. Vehículo: #{alert.device}. Velocidad: #{alert.speed}Km/h. hora: #{alert.datetime}. Coordenadas: #{alert.lat},#{alert.lng}"
+    "*#{alert["alert_name"]}*. Vehículo: #{alert["device"]}. Velocidad: #{alert["speed"]}Km/h. hora: #{alert["datetime"]}. Coordenadas: #{alert["lat"]},#{alert["lng"]}"
   end
 
   def assemble_multiple_messages(alerts) do
