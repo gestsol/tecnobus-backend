@@ -25,7 +25,7 @@ defmodule Tecnobus.API.Whatsapp do
 
     send_status = Map.take(body, ["deliveryStatus", "status", "webhookStatus"])
 
-    IO.inspect(%{"STATUS_ENVIO_WHATSAPP" => send_status})
+    %{"STATUS_ENVIO_WHATSAPP" => send_status}
   end
 
   def send_test(code, phone, message) do
