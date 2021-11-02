@@ -25,16 +25,17 @@ defmodule Tecnobus.AlertListener do
 
       created_alerts =
         Task.async_stream(alerts, &Events.create_alert/1)
-        |> Enum.filter(fn {:ok, result} ->
+        |> Enum.map(fn {:ok, result} ->
           case result do
             {:error, error} ->
               IO.warn("ERROR AL INSERTAR ALERTA EN BASE DE DATOS. VER EL OUTPUT ABAJO:")
               IO.inspect(%{"error" => error})
-              false
-            {:ok, _created_alert} ->
-              true
+              nil
+            {:ok, created_alert} ->
+              created_alert
           end
         end)
+        |> Enum.reject(fn a -> is_nil(a) end)
 
       send_whatsapp(created_alerts, @phones)
     end
