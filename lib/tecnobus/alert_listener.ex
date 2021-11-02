@@ -14,8 +14,8 @@ defmodule Tecnobus.AlertListener do
   # Funcion para ser ejecutada en un job. Cada ciertos minutos
   # se obtienen las alertas de la api externa, se envian por whatsapp
   # y se guardan en nuestra base de datos.
-  def process_centinela_alerts(alerts) do
-    # alerts = get_centinela_alerts(minutes)
+  def process_centinela_alerts(minutes) do
+    alerts = get_centinela_alerts(minutes)
 
     IO.puts("++++++++++++++++ ALERTAS +++++++++++++++++++")
     IO.inspect(alerts)
