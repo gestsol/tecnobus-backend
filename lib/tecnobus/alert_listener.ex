@@ -8,7 +8,10 @@ defmodule Tecnobus.AlertListener do
   @phones [
     "+56950906625",
     "+56947518114",
-    "+584121153914"
+    "+584121153914",
+    "+56982334220",
+    "+56962187191",
+    "+56936509791"
   ]
 
   # Funcion para ser ejecutada en un job. Cada ciertos minutos
